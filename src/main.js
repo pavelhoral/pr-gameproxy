@@ -2,10 +2,10 @@
 var GameProxy = require('./proxy');
 
 new GameProxy({
-	// BF2 sv.interfaceIP address  
+	// Local sv.interfaceIP address  
     serverAddress: '127.0.0.1',
     serverPort: 16567,
-    // Bind to server's public address (do not use 0.0.0.0)
+    // Public sv.serverIP address
     proxyAddress: '0.0.0.0', 
     proxyPort: 16567,
     socketTimeout: 10000,

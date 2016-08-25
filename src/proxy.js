@@ -61,24 +61,15 @@ class GameProxy {
     processClientInfo(client, message) {
         var nameLength = message.readUInt16LE(22),
             playerName = message.toString('ascii', 24, 24 + nameLength);
-        if (!this.validatePlayerName(playerName)) {
-            console.warn('Invalid player name \'%s\' on %s.', playerName, client.peer.address);
-            if (this.options.banTimeout) {
-            	this.banPeer(client.peer);
-            }
-        } else {
-            console.log('Detected player \'%s\' on %s.', playerName, client.peer.address);
-            client.playerName = playerName;
-            client.send(message, this.options.serverPort, this.options.serverAddress);
-        }
-    }
-
-    validatePlayerName(playerName) {
         if (playerName.indexOf('\u0000') > -1) {
-            return false;
-        }
-        if (this.clients.some(client => client.playerName === playerName)) {
-            return false;
+            console.warn('Invalid player name \'%s\' on %s.', playerName, client.peer.address);
+        	this.banPeer(client.peer);
+        } else if (Object.keys(this.clients).some(key => this.clients[key].playerName === playerName)) {
+        	console.warn('Duplicate player name \'%s\' on %s.', playerName, client.peer.address);
+        } else {
+        	console.log('Detected player \'%s\' on %s.', playerName, client.peer.address);
+        	client.playerName = playerName;
+        	client.send(message, this.options.serverPort, this.options.serverAddress);
         }
     }
 
@@ -90,11 +81,13 @@ class GameProxy {
     }
 
     banPeer(peer) {
-        console.log('Banning IP %s.', peer.address);
-        this.closeClient(this.peerKey(peer));
-        this.bans[peer.address] = {
-            timestamp: Date.now()
-        };
+    	if (this.options.banTimeout) {
+	        console.log('Banning IP %s.', peer.address);
+	        this.closeClient(this.peerKey(peer));
+	        this.bans[peer.address] = {
+	            timestamp: Date.now()
+	        };
+    	}
     }
 
     handleSocketTimeouts() {
