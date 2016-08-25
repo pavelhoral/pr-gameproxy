@@ -29,7 +29,7 @@ class GameProxy {
             bind(this.options.proxyPort, this.options.proxyAddress);
         setInterval(() => this.handleSocketTimeouts(), 1000);
         if (this.options.banTimeout) {
-        	setInterval(() => this.handleBanTimeouts(), 60000);
+            setInterval(() => this.handleBanTimeouts(), 60000);
         }
     }
 
@@ -63,13 +63,13 @@ class GameProxy {
             playerName = message.toString('ascii', 24, 24 + nameLength);
         if (playerName.indexOf('\u0000') > -1) {
             console.warn('Invalid player name \'%s\' on %s.', playerName, client.peer.address);
-        	this.banPeer(client.peer);
+            this.banPeer(client.peer);
         } else if (Object.keys(this.clients).some(key => this.clients[key].playerName === playerName)) {
-        	console.warn('Duplicate player name \'%s\' on %s.', playerName, client.peer.address);
+            console.warn('Duplicate player name \'%s\' on %s.', playerName, client.peer.address);
         } else {
-        	console.log('Detected player \'%s\' on %s.', playerName, client.peer.address);
-        	client.playerName = playerName;
-        	client.send(message, this.options.serverPort, this.options.serverAddress);
+            console.log('Detected player \'%s\' on %s.', playerName, client.peer.address);
+            client.playerName = playerName;
+            client.send(message, this.options.serverPort, this.options.serverAddress);
         }
     }
 
@@ -81,13 +81,13 @@ class GameProxy {
     }
 
     banPeer(peer) {
-    	if (this.options.banTimeout) {
-	        console.log('Banning IP %s.', peer.address);
-	        this.closeClient(this.peerKey(peer));
-	        this.bans[peer.address] = {
-	            timestamp: Date.now()
-	        };
-    	}
+        if (this.options.banTimeout) {
+            console.log('Banning IP %s.', peer.address);
+            this.closeClient(this.peerKey(peer));
+            this.bans[peer.address] = {
+                timestamp: Date.now()
+            };
+        }
     }
 
     handleSocketTimeouts() {
