@@ -1,13 +1,5 @@
 'use strict';
-var dgram = require('dgram'),
-    options = {
-        serverAddress: '127.0.0.1',
-        serverPort: 16567,
-        proxyAddress: '0.0.0.0',
-        proxyPort: 16567,
-        socketTimeout: 10000,
-        banTimeout: 30 * 60 * 1000
-    };
+var dgram = require('dgram');
 
 class GameProxy {
 
@@ -31,13 +23,14 @@ class GameProxy {
                 } else if (!client) {
                     console.log('Creating new connection for %s.', key);
                     client = this.createClient(peer);
-                    this.clients[key] = client;
                 }
-                this.process(client, message, peer);
+                this.process(client, message);
             }).
             bind(this.options.proxyPort, this.options.proxyAddress);
         setInterval(() => this.handleSocketTimeouts(), 1000);
-        setInterval(() => this.handleBanTimeouts(), 60000);
+        if (this.options.banTimeout) {
+        	setInterval(() => this.handleBanTimeouts(), 60000);
+        }
     }
 
     peerKey(peer) {
@@ -45,31 +38,36 @@ class GameProxy {
     }
 
     createClient(peer) {
-        return dgram.createSocket('udp4').
+        var client = dgram.createSocket('udp4').
             on('message', (message) => {
                 this.socket.send(message, peer.port, peer.address);
             });
+        client.peer = peer;
+        this.clients[this.peerKey(peer)] = client;
+        return client;
     }
 
-    process(client, message, peer) {
+    process(client, message) {
         client.timestamp = Date.now();
         if (message[0] & 0x0F === 0x0F &&
                 message[12] === 0x01 && message[13] | message[14] | message[15] === 0x00 &&
                 message[17] | message[18] | message[19] === 0x00 && message[20] === 0x04) {
-            this.processClientInfo(client, message, peer);
+            this.processClientInfo(client, message);
         } else {
             client.send(message, this.options.serverPort, this.options.serverAddress);
         }
     }
 
-    processClientInfo(client, message, peer) {
+    processClientInfo(client, message) {
         var nameLength = message.readUInt16LE(22),
             playerName = message.toString('ascii', 24, 24 + nameLength);
         if (!this.validatePlayerName(playerName)) {
-            console.warn('Invalid player name \'%s\' on %s.', playerName, peer.address);
-            this.banPeer(client, peer);
+            console.warn('Invalid player name \'%s\' on %s.', playerName, client.peer.address);
+            if (this.options.banTimeout) {
+            	this.banPeer(client.peer);
+            }
         } else {
-            console.log('Detected player \'%s\' on %s.', playerName, peer.address);
+            console.log('Detected player \'%s\' on %s.', playerName, client.peer.address);
             client.playerName = playerName;
             client.send(message, this.options.serverPort, this.options.serverAddress);
         }
@@ -121,4 +119,4 @@ class GameProxy {
 
 }
 
-module.exports = new GameProxy(options);
+module.exports = GameProxy;
