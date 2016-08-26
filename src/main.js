@@ -1,4 +1,8 @@
 'use strict';
+/*
+ * Project Reality game protocol reverse proxy.
+ * Uses ES6 constructs, so don't forget tu run with --harmony option.
+ */
 var GameProxy = require('./proxy');
 
 new GameProxy({
