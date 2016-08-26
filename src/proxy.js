@@ -53,8 +53,6 @@ class GameProxy {
                 } else if (!client) {
                     this.logger.debug('Creating new connection for %s.', key);
                     client = this.createClient(peer);
-                } else if (client.spoiled) {
-                    return; // NULL routing 'spoiled' connection
                 }
                 this.process(client, message);
             }).
@@ -98,7 +96,6 @@ class GameProxy {
             this.banPeer(client.peer);
         } else if (Object.keys(this.clients).some(key => this.clients[key].playerName === playerName)) {
             this.logger.warn('Duplicate player name \'%s\' on %s.', playerName, client.peer.address);
-            client.spoiled = true; // Mark the connection as 'spoiled'
         } else {
             this.logger.debug('Detected player \'%s\' on %s.', playerName, client.peer.address);
             client.playerName = playerName;
