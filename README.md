@@ -22,4 +22,4 @@ You need to update your server configuration (`mods/pr/settings/serversettings.c
 
 ## Running The Proxy
 
-    node --harmony proxy/main >> proxy.log
+    node --harmony proxy >> proxy.log

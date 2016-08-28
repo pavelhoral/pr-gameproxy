@@ -321,7 +321,7 @@ class ConfigBuilder {
  */
 GameProxy.create = function(serverBase) {
     if (!serverBase) {
-        serverBase = path.resolve(__dirname, '..');
+        serverBase = path.resolve(process.argv[1], '..');
     }
     return new GameProxy(new ConfigBuilder().load(serverBase).debug(process.env.DEBUG).options);
 };
