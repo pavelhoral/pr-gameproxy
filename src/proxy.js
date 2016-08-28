@@ -19,7 +19,9 @@ class Logger {
 
     constructor(name, debug) {
         this.name = name;
-        this.debug = debug || false;
+        if (!debug) {
+            this.debug = () => {};
+        }
     }
 
     debug(message, ...args) {
@@ -85,7 +87,7 @@ class GameProxy {
         // Create public PROXY socket.
         this.socket = dgram.createSocket('udp4').
             on('listening', () => {
-                this.logger.info('Game proxy listening on port %d.', this.options.proxyPort);
+                this.logger.info('Game proxy listening on %s:%d.', this.options.proxyAddress, this.options.serverPort);
             }).
             on('message', (message, peer) => {
                 var key = this.peerKey(peer),
@@ -301,11 +303,12 @@ class ConfigBuilder {
         }
         this.options.serverPort = this.config['sv.serverPort'];
         // Process sv.interfaceIP
-        if (!this.config['sv.serverIP']) {
+        if (!this.config['sv.interfaceIP']) {
             throw 'Missing sv.interfaceIP configuration.';
         } else if (this.config['sv.interfaceIP'] === '0.0.0.0') {
             throw `Invalid sv.interfaceIP value '${this.config['sv.interfaceIP']}' (public IP expected).`;
         }
+        this.options.proxyAddress = this.config['sv.interfaceIP'];
         return this;
     }
 
@@ -336,20 +339,19 @@ class ProxyControl {
         this.proxy = proxy;
         this.options = options;
         this.logger = new Logger('CONTROL', options.debug);
-        this.server = http.createServer(this.handleRequest);
+        this.server = http.createServer((req, res) => this.handleRequest(req, res));
     }
 
     start() {
         this.server.listen(this.options.controlPort, () => {
-            this.logger.info('Control server listening on %d.', this.options.controlPort);
+            this.logger.info('Control server listening on port %d.', this.options.controlPort);
         });
         return this;
     }
 
     handleRequest(req, res) {
         res.writeHead(200, { 'Content-Type': 'text/plain' });
-        res.write(this.renderStatus());
-        res.end('ok');
+        res.end(this.renderStatus());
     }
 
     renderStatus() {
