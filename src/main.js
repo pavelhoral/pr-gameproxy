@@ -6,6 +6,12 @@
 var base = '';
 
 /**
- * Create and start the game proxy.
+ * Create the game proxy.
  */
-require('./proxy').create(base).start();
+var proxy = require('./proxy').create(base);
+
+// Start the poxy
+proxy.start();
+
+// Create control server
+//proxy.control(9080);

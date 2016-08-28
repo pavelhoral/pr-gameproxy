@@ -8,6 +8,7 @@
  * Code uses ES6 constructs, so don't forget to run NodeJS with --harmony option.
  */
 var dgram = require('dgram'),
+    http = require('http'),
     path = require('path'),
     fs = require('fs');
 
@@ -68,7 +69,7 @@ class GameProxy {
             banTimeout: 10 * 60000
         }, options);
         // Component logger
-        this.logger = new Logger('PROXY');
+        this.logger = new Logger('PROXY', this.options.debug);
         // Public proxy SOCKET
         this.socket = null;
         // Local client SOCKETs
@@ -229,6 +230,8 @@ class GameProxy {
 
 }
 
+module.exports = GameProxy;
+
 
 /**
  * Proxy configration builder with the support of loading and validating server configuration.
@@ -261,7 +264,9 @@ class ConfigBuilder {
      */
     _loadConfig(serverBase) {
         var configPath = path.resolve(serverBase, 'mods/pr/settings/serversettings.con');
-        if (!fs.accessSync(configPath, fs.constants.R_OK)) {
+        try {
+            fs.accessSync(configPath, fs.R_OK);
+        } catch (e) {
             throw `Can not read server config '${configPath}'.`;
         }
         fs.readFileSync(configPath, { encoding: 'utf8' }).split('\n').forEach(line => {
@@ -321,4 +326,43 @@ GameProxy.create = function(serverBase) {
     return new GameProxy(new ConfigBuilder().load(serverBase).debug(process.env.DEBUG).options);
 };
 
-module.exports = GameProxy;
+
+/**
+ * External proxy interface.
+ */
+class ProxyControl {
+
+    constructor(proxy, options) {
+        this.proxy = proxy;
+        this.options = options;
+        this.logger = new Logger('CONTROL', options.debug);
+        this.server = http.createServer(this.handleRequest);
+    }
+
+    start() {
+        this.server.listen(this.options.controlPort, () => {
+            this.logger.info('Control server listening on %d.', this.options.controlPort);
+        });
+        return this;
+    }
+
+    handleRequest(req, res) {
+        res.writeHead(200, { 'Content-Type': 'text/plain' });
+        res.write(this.renderStatus());
+        res.end('ok');
+    }
+
+    renderStatus() {
+        return Object.keys(this.proxy.clients).map(key => {
+            return key + '\t' + this.proxy.clients[key].playerName;
+        }).join('\n');
+    }
+
+}
+
+/**
+ * ProxyControl factory method.
+ */
+GameProxy.prototype.control = function(port) {
+    return new ProxyControl(this, { controlPort: port }).start();
+};
