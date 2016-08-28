@@ -270,7 +270,7 @@ class ConfigBuilder {
             throw `Can not read server config '${configPath}'.`;
         }
         fs.readFileSync(configPath, { encoding: 'utf8' }).split('\n').forEach(line => {
-            var option = line.trim().split(/\s+/, 1);
+            var option = line.trim().split(/\s+(.+)?/, 2);
             if (option.length !== 2 || option[0] === 'rem') {
                 return;
             } else  if (/".*"/.test(option[1])) {
