@@ -1,9 +1,9 @@
 'use strict';
 
 /**
- * You can enter path to your server installation here (defaults to parent directory).
+ * You can enter path to your server installation here (defaults to CWD).
  */
-var base = '';
+var base = process.env.SERVER_BASE || '';
 
 /**
  * Create the game proxy.
